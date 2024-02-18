@@ -14,7 +14,7 @@ Contact: lfarias.giraldo@gmail.com
 This repository includes a script that performs the following tasks:
 
 - Loads the data required to run the analyses described in the manuscript. 
-- Executes the analytical protocols as described..
+- Executes the analytical protocols as described.
   - Conducts multivariate and univariate analyses to identify niche signals.
   - Performs calibration and model selection.
   - Generates response curves and determines variable importance.
@@ -25,4 +25,4 @@ This repository includes a script that performs the following tasks:
   
 ### Scripts
 
-- <a href="https://github.com/luisagi/enmpa_test/Scripts/Example.R" target="_blank">Script</a> with an example of how to use the methods presented in the manuscript.
+- <a href="https://github.com/Luisagi/enmpa_test/blob/main/Scripts/Example.R" target="_blank">Script</a> with an example of how to use the methods presented in the manuscript.
