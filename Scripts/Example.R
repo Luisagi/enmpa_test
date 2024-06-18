@@ -17,6 +17,9 @@
 library(enmpa) 
 library(terra)
 
+#~ set terrain default palette
+options(terra.pal=terrain.colors(234, rev = TRUE))
+
 ################################################################################
 #~ Load species occurrences and environmental data
 
@@ -31,32 +34,16 @@ plot(vars, nr = 2)
 #~ Adapted methods developed by Cobos and Peterson (2022) to identify 
 #~ relevant variables for characterizing species' ecological niches
 
-#~ Univariate non-paramentric test
-sn_uni_bio1  <- niche_signal(data = enm_data, variables = "bio_1",
-                             condition = "Sp", method = "univariate")
-
-sn_uni_bio12 <- niche_signal(data = enm_data, variables = "bio_12",
-                             condition = "Sp", method = "univariate")
-
-#~ Plotting results 
-enmpa::plot_niche_signal(sn_uni_bio1, variables = "bio_1",
-                         xlab = "BIO 1 (mean)")
-
-enmpa::plot_niche_signal(sn_uni_bio12, variables = "bio_12",
-                         xlab = "BIO 12 (mean)")
-
-
-#~ Multivariate analysis based on a PERMANOVA
+#~ Multivariate analysis based on a PERMANOVA___________________________________
 #~ task memory-intensive & time-consuming
 sn_per  <- niche_signal(data = enm_data, variables = c("bio_1", "bio_12"),
                         condition = "Sp", method = "permanova")
 
 sn_per
 
-#~ plotting results
+#~ plotting results: Figure S1
 
-# png(filename = "Figure S1.png", width = 900, height = 520, units = "px", res = 100)
-
+#png(filename = "Figure S1.png", width = 300, height = 180, units = "mm", res = 300)
 par(mfrow = c(1, 2), mar = c(5, 4, 2, 1) + 0.1)
 
 enmpa::plot_niche_signal(sn_per, variables = c("bio_1", "bio_12"),
@@ -83,7 +70,33 @@ legend("topright", legend = c("Host niche", "Pathogen niche"),  cex = 0.8,
        lty = 1, lwd = 1.5, col = c("black", "red"), 
        y.intersp = 1, bty = "n", inset = c(0,0))
 
-dev.off()
+#dev.off()
+
+
+#~ Univariate non-parametric test _____________________________________________
+sn_uni_bio1  <- niche_signal(data = enm_data, variables = "bio_1",
+                             condition = "Sp", method = "univariate")
+
+sn_uni_bio12 <- niche_signal(data = enm_data, variables = "bio_12",
+                             condition = "Sp", method = "univariate")
+
+#~ Plotting results: Figure S2
+
+#png(filename = "Figure S2.png", width = 300, height = 180, units = "mm", res = 300)
+par(mfrow = c(2, 2), mar = c(5, 4, 4, 2) + 0.1)
+enmpa::plot_niche_signal(sn_uni_bio1, variables = "bio_1",  statistic = "mean",
+                         xlab = "BIO 1 (mean)")
+
+enmpa::plot_niche_signal(sn_uni_bio12, variables = "bio_12", statistic = "mean",
+                         xlab = "BIO 12 (mean)")
+
+enmpa::plot_niche_signal(sn_uni_bio1, variables = "bio_1",  statistic = "SD",
+                         xlab = "BIO 1 (SD)")
+
+enmpa::plot_niche_signal(sn_uni_bio12, variables = "bio_12", statistic = "SD",
+                         xlab = "BIO 12 (SD)")
+#dev.off()
+
 ################################################################################
 #~ Get formulas combination
 
@@ -123,9 +136,11 @@ summary(fmodels)
 
 
 ################################################################################
-#~ Response curves
+#~ Response curves (Figure 1)
 
 #~ Response curves for BIO-1 for models ID 29, 31 and consensus
+
+#png(filename = "Figure 1A.png", width = 300, height = 180, units = "mm", res = 300)
 par(mfrow = c(2, 3), mar = c(5, 4, 4, 2) + 0.1)
 
 response_curve(fitted = fmodels, modelID = "ModelID_29",
@@ -159,6 +174,7 @@ response_curve(fmodels, variable =  "bio_12",  xlab = "BIO-12",
                new_data = vars,  main = "Consensus",
                cex.lab=1.25, cex.axis=1.15, cex.main=1.25, cex.sub=1.25)
 
+dev.off()
 
 ################################################################################
 #~ Variable importance based on explained deviance
@@ -175,33 +191,54 @@ vi_c$predictor <- gsub("bio_", "BIO-", vi_c$predictor)
 dev.off()
 enmpa::plot_importance(vi_29)
 enmpa::plot_importance(vi_31)
+
+#png(filename = "Figure 1B.png", width = 300, height = 180, units = "mm", res = 300)
 enmpa::plot_importance(vi_c, main = "Variable importance")
+#dev.off()
 
-################################################################################
-#~ Jackknife test
-
-jk <- jackknife(data = enm_data, 
-                dependent = "Sp", 
-                independent = c("bio_1", "bio_12"), 
-                cv = 3, 
-                response_type = "lqp" )
-
-plot_jk(jk, metric = "ROC_AUC")
-plot_jk(jk, metric = "Deviance")
-plot_jk(jk, metric = "TSS")
-plot_jk(jk, metric = "AIC")
 
 ################################################################################
 #~ Final model projection onto the area of North America
 
 ###~ Individual model predictions
-preds <- predict_selected(fmodels,
-                          newdata = vars,
-                          consensus = TRUE, 
-                          extrapolation_type = "EC")
+preds_E  <- predict_selected(fmodels, newdata = vars, consensus = TRUE,
+                             extrapolation_type = "E")
+preds_NE <- predict_selected(fmodels, newdata = vars, consensus = TRUE, 
+                             extrapolation_type = "NE")
+preds_EC <- predict_selected(fmodels, newdata = vars, consensus = TRUE,
+                             extrapolation_type = "EC")
+preds_E
+preds_NE
+preds_EC
 
-terra::plot(preds$predictions, nr = 2)
-terra::plot(preds$consensus)
+terra::plot(c(preds_E$predictions,
+              preds_NE$predictions,
+              preds_EC$predictions),
+            main = c("Model ID 29 (E)", "Model ID 31 (E)",
+                     "Model ID 29 (NE)", "Model ID 31 (NE)",
+                     "Model ID 29 (EC)", "Model ID 31 (EC)"),
+            mar = c(1, 1, 2, 5), nr = 3)
+
+
+###~ Consensus model predictions
+terra::plot(preds_E$consensus, mar = c(4, 2, 2, 3))
+terra::plot(preds_NE$consensus, mar = c(4, 2, 2, 3))
+terra::plot(preds_EC$consensus, mar = c(4, 2, 2, 3))
+
+
+#~ Figure S3
+plot(c(preds_NE$predictions$ModelID_29,
+       preds_EC$predictions$ModelID_29,
+       preds_NE$predictions$ModelID_31,
+       preds_EC$predictions$ModelID_31,
+       preds_NE$consensus$Weighted_average,
+       preds_EC$consensus$Weighted_average),
+     main = c("Model ID 29 (NE)","Model ID 29 (EC)",
+              "Model ID 31 (NE)", "Model ID 31 (EC)", 
+              "Weigthed average (NE)", "Weigthed average (EC)"),
+     mar = c(2.5, 2, 2, 5),
+     nr = 3)
+
 ################################################################################
 #~ Final model evaluation with an independent data
 
@@ -214,12 +251,9 @@ head(test)
 test_1 <- test[test$Sp == 1,]
 test_01 <- test
 
-#~ Final evaluation using the weighted average based on Akaike weights
-wmean <- preds$consensus$Weighted_average
-
 ##~ Presences-absences evaluation
 
-projects <- list(
+projections <- list(
   ModelID_29 = preds$predictions$ModelID_29,
   ModelID_31 = preds$predictions$ModelID_31,
   Consensus_WA = preds$consensus$Weighted_average
@@ -242,9 +276,9 @@ ModelID_29_T1 <- ie_01[["ModelID_29"]][1, "Threshold"] # ESS
 ModelID_29_T2 <- ie_01[["ModelID_29"]][2, "Threshold"] # maxTSS
 ModelID_29_T3 <- ie_01[["ModelID_29"]][3, "Threshold"] # SEN90
 
-aux_list <- list(ESS = ModelID_29_T1, maxTSS = ModelID_29_T2, SEN90 = ModelID_29_T3)
+aux_list1 <- list(ESS = ModelID_29_T1, maxTSS = ModelID_29_T2, SEN90 = ModelID_29_T3)
 
-lapply(aux_list, function(th){
+lapply(aux_list1, function(th){
   independent_eval1(prediction = projects[["ModelID_29"]],
                     threshold = th,
                     lon_lat = test_1[, c("lon", "lat")])
@@ -256,9 +290,9 @@ ModelID_31_T1 <- ie_01[["ModelID_31"]][1, "Threshold"] # ESS
 ModelID_31_T2 <- ie_01[["ModelID_31"]][2, "Threshold"] # maxTSS
 ModelID_31_T3 <- ie_01[["ModelID_31"]][3, "Threshold"] # SEN90
 
-aux_list <- list(ESS = ModelID_31_T1, maxTSS = ModelID_31_T2, SEN90 = ModelID_31_T3)
+aux_list2 <- list(ESS = ModelID_31_T1, maxTSS = ModelID_31_T2, SEN90 = ModelID_31_T3)
 
-lapply(aux_list, function(th){
+lapply(aux_list2, function(th){
   independent_eval1(prediction = projects[["ModelID_31"]],
                     threshold = th,
                     lon_lat = test_1[, c("lon", "lat")])
@@ -271,9 +305,9 @@ Consensus_WA_T1 <- ie_01[["Consensus_WA"]][1, "Threshold"] # ESS
 Consensus_WA_T2 <- ie_01[["Consensus_WA"]][2, "Threshold"] # maxTSS
 Consensus_WA_T3 <- ie_01[["Consensus_WA"]][3, "Threshold"] # SEN90
 
-aux_list <- list(ESS = Consensus_WA_T1, maxTSS = Consensus_WA_T2, SEN90 = Consensus_WA_T3)
+aux_list3 <- list(ESS = Consensus_WA_T1, maxTSS = Consensus_WA_T2, SEN90 = Consensus_WA_T3)
 
-lapply(aux_list, function(th){
+lapply(aux_list3, function(th){
   independent_eval1(prediction = projects[["Consensus_WA"]],
                     threshold = th,
                     lon_lat = test_1[, c("lon", "lat")])
